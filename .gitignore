@@ -1,0 +1,48 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build output
+*.test
+*.out
+
+# Output of the go build command (by default)
+calmnews
+
+# Vendor directory (optional, if you're not committing vendor/)
+vendor/
+
+# Dependency directories (remove the comment below if you use Go modules)
+# Uncomment if you are vendoring
+# /vendor/
+
+# Go workspace file (Go 1.18+)
+go.work
+go.work.sum
+
+# Editor/project files
+*.swp
+*.swo
+*.swn
+.idea/
+.vscode/
+*.code-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite database and config files (for CalmNews)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# User/config file in home dir (for CalmNews)
+.calmnews/

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - CalmNews</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><a href="/">CalmNews</a></h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/settings" class="active">Settings</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="settings-section">
+                <h2>Blocklist</h2>
+                <p>Articles containing these phrases will be filtered out from the main feed.</p>
+                
+                <ul class="blocklist">
+                    {{ range .Blocklist }}
+                    <li>
+                        <span>{{ . }}</span>
+                        <form method="POST" action="/settings/blocklist" style="display: inline;">
+                            <input type="hidden" name="action" value="remove">
+                            <input type="hidden" name="phrase" value="{{ . }}">
+                            <button type="submit">Remove</button>
+                        </form>
+                    </li>
+                    {{ else }}
+                    <li class="empty">No blocklist entries.</li>
+                    {{ end }}
+                </ul>
+
+                <form method="POST" action="/settings/blocklist" class="add-form">
+                    <input type="hidden" name="action" value="add">
+                    <input type="text" name="phrase" placeholder="Enter phrase to block" required>
+                    <button type="submit">Add to Blocklist</button>
+                </form>
+            </section>
+
+            <section class="settings-section">
+                <h2>Feeds</h2>
+                <p>Manage your RSS/Atom feeds.</p>
+
+                <table class="feeds-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>URL</th>
+                            <th>Category</th>
+                            <th>Enabled</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Feeds }}
+                        <tr>
+                            <td>{{ .Name }}</td>
+                            <td><a href="{{ .URL }}" target="_blank">{{ .URL }}</a></td>
+                            <td>{{ .Category }}</td>
+                            <td>
+                                <form method="POST" action="/settings/feeds" style="display: inline;">
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="feed_id" value="{{ .ID }}">
+                                    <input type="checkbox" {{ if .Enabled }}checked{{ end }} onchange="this.form.submit()">
+                                </form>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <td colspan="4" class="empty">No feeds configured.</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+
+                <h3>Add New Feed</h3>
+                <form method="POST" action="/settings/feeds" class="add-form">
+                    <input type="hidden" name="action" value="add">
+                    <input type="text" name="id" placeholder="ID (e.g., myfeed)" required>
+                    <input type="text" name="name" placeholder="Name (e.g., My Feed)" required>
+                    <input type="url" name="url" placeholder="RSS/Atom URL" required>
+                    <input type="text" name="category" placeholder="Category (e.g., news)" required>
+                    <button type="submit">Add Feed</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
+

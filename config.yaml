@@ -1,0 +1,70 @@
+feeds:
+  - id: "hackernews"
+    name: "Hacker News"
+    url: "https://hnrss.org/frontpage"
+    category: "tech"
+    enabled: true
+    refresh_interval_minutes: 10
+    # wired catalog: https://www.wired.com/about/rss-feeds/
+  - id: "wired-business"
+    name: "Wired Business"
+    url: "https://www.wired.com/feed/category/business/latest/rss"
+    category: "tech"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "wired-ai"
+    name: "Wired AI"
+    url: "https://www.wired.com/feed/tag/ai/latest/rss"
+    category: "tech"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "nytimes-cover"
+    name: "NY Times Cover"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+    category: "general"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "nytimes-business"
+    name: "NY Times Business"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
+    category: "business"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "nytimes-technology"
+    name: "NY Times Technology"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"
+    category: "technology"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "nytimes-science"
+    name: "NY Times Science"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml"
+    category: "science"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "nytimes-health"
+    name: "NY Times Health"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+    category: "health"
+    enabled: true
+    refresh_interval_minutes: 10
+  - id: "elpais-portada"
+    name: "El País México"
+    url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/mexico/portada"
+    category: "general"
+    enabled: true
+    refresh_interval_minutes: 10
+  
+blocklist:
+  - "donald trump"
+  - "trump"
+  - "elon musk"
+  - "musk"
+  - "vance"
+  - "white house"
+  - "pam bondi"
+  - "ICE"
+ui:
+  items_per_page: 50
+  default_view: "latest"
+  show_filtered_count: true

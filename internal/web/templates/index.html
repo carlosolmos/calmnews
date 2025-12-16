@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalmNews</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><a href="/">CalmNews</a></h1>
+            <nav>
+                <a href="/?view=latest" {{ if eq .View "latest" }}class="active"{{ end }}>Latest</a>
+                <a href="/?view=today" {{ if eq .View "today" }}class="active"{{ end }}>Today</a>
+                <a href="/?view=week" {{ if eq .View "week" }}class="active"{{ end }}>This Week</a>
+                <a href="/settings">Settings</a>
+            </nav>
+        </header>
+
+        <div class="filters">
+            <select onchange="window.location.href='/?view={{ .View }}&feed=' + this.value">
+                <option value="all" {{ if eq .FeedID "all" }}selected{{ end }}>All Feeds</option>
+                {{ range .Feeds }}
+                <option value="{{ .ID }}" {{ if eq $.FeedID .ID }}selected{{ end }}>{{ .Name }}</option>
+                {{ end }}
+            </select>
+        </div>
+
+        {{ if and .ShowFilteredCount (gt .FilteredCount 0) }}
+        <div class="filtered-notice">
+            Filtered out {{ .FilteredCount }} articles (blocklist active)
+        </div>
+        {{ end }}
+
+        <main>
+            <ol class="article-list">
+                {{ range .Articles }}
+                <li>
+                    <div class="article">
+                        <a href="{{ .URL }}" target="_blank" class="title">{{ .Title }}</a>
+                        <div class="meta">
+                            <span class="source">{{ .SourceName }}</span>
+                            <span class="time">{{ timeAgo .PublishedAt }}</span>
+                            {{ if .FeedID }}
+                            <span class="category">{{ .FeedID }}</span>
+                            {{ end }}
+                        </div>
+                    </div>
+                </li>
+                {{ else }}
+                <li class="empty">No articles found.</li>
+                {{ end }}
+            </ol>
+        </main>
+
+        <div class="pagination">
+            {{ if .HasPrevPage }}
+            <a href="/?view={{ .View }}&feed={{ .FeedID }}&page={{ .PrevPage }}">← Previous</a>
+            {{ end }}
+            {{ if and .HasPrevPage .HasNextPage }}
+            <span> | </span>
+            {{ end }}
+            {{ if .HasNextPage }}
+            <a href="/?view={{ .View }}&feed={{ .FeedID }}&page={{ .NextPage }}">Next →</a>
+            {{ end }}
+        </div>
+    </div>
+</body>
+</html>
+
