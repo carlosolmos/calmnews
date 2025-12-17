@@ -18,8 +18,8 @@ import (
 
 // Server holds the dependencies for HTTP handlers
 type Server struct {
-	db     *sql.DB
-	config *config.Config
+	db         *sql.DB
+	config     *config.Config
 	configPath string
 }
 
@@ -39,13 +39,21 @@ func (s *Server) HandleIndex(w http.ResponseWriter, r *http.Request) {
 	if view == "" {
 		view = s.config.UI.DefaultView
 	}
-	if view != "latest" && view != "today" && view != "week" {
+	if view != "latest" && view != "today" && view != "week" && view != "saved" {
 		view = "latest"
 	}
 
 	feedID := r.URL.Query().Get("feed")
 	if feedID == "" {
 		feedID = "all"
+	}
+
+	readFilter := r.URL.Query().Get("read")
+	if readFilter == "" {
+		readFilter = "all"
+	}
+	if readFilter != "all" && readFilter != "read" && readFilter != "unread" {
+		readFilter = "all"
 	}
 
 	pageStr := r.URL.Query().Get("page")
@@ -58,7 +66,7 @@ func (s *Server) HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 	// Query articles (get a superset, we'll filter and paginate)
 	limit := 300 // Get more than we need for filtering
-	articles, err := storage.ListArticlesByView(s.db, view, feedID, limit)
+	articles, err := storage.ListArticlesByView(s.db, view, feedID, readFilter, limit)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error querying articles: %v", err), http.StatusInternalServerError)
 		return
@@ -88,16 +96,17 @@ func (s *Server) HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 	// Prepare template data
 	data := map[string]interface{}{
-		"Articles":         pageArticles,
-		"View":             view,
-		"FeedID":           feedID,
-		"Feeds":            feeds,
-		"Page":             page,
-		"NextPage":         page + 1,
-		"PrevPage":         page - 1,
-		"HasNextPage":      end < len(filteredArticles),
-		"HasPrevPage":      page > 1,
-		"FilteredCount":    filteredCount,
+		"Articles":          pageArticles,
+		"View":              view,
+		"FeedID":            feedID,
+		"ReadFilter":        readFilter,
+		"Feeds":             feeds,
+		"Page":              page,
+		"NextPage":          page + 1,
+		"PrevPage":          page - 1,
+		"HasNextPage":       end < len(filteredArticles),
+		"HasPrevPage":       page > 1,
+		"FilteredCount":     filteredCount,
 		"ShowFilteredCount": s.config.UI.ShowFilteredCount,
 	}
 
@@ -170,6 +179,54 @@ func (s *Server) HandleUpdateBlocklist(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
+// HandleMarkArticleRead handles POST requests to mark an article as read
+func (s *Server) HandleMarkArticleRead(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	articleID := r.FormValue("id")
+	if articleID == "" {
+		http.Error(w, "Article ID required", http.StatusBadRequest)
+		return
+	}
+
+	if err := storage.MarkArticleAsRead(s.db, articleID); err != nil {
+		log.Printf("Error marking article as read: %v", err)
+		http.Error(w, "Error marking article as read", http.StatusInternalServerError)
+		return
+	}
+
+	// Return JSON response for AJAX calls
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status": "ok"}`))
+}
+
+// HandleToggleArticleSaved handles POST requests to toggle an article's saved status
+func (s *Server) HandleToggleArticleSaved(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	articleID := r.FormValue("id")
+	if articleID == "" {
+		http.Error(w, "Article ID required", http.StatusBadRequest)
+		return
+	}
+
+	if err := storage.ToggleArticleSaved(s.db, articleID); err != nil {
+		log.Printf("Error toggling article saved status: %v", err)
+		http.Error(w, "Error toggling article saved status", http.StatusInternalServerError)
+		return
+	}
+
+	// Return JSON response for AJAX calls
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status": "ok"}`))
+}
+
 // HandleUpdateFeeds handles POST requests to update feeds
 func (s *Server) HandleUpdateFeeds(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -219,11 +276,11 @@ func (s *Server) HandleUpdateFeeds(w http.ResponseWriter, r *http.Request) {
 				// Add to config
 				refreshInterval := 10
 				s.config.Feeds = append(s.config.Feeds, config.FeedConfig{
-					ID:                   feedID,
-					Name:                 name,
-					URL:                  url,
-					Category:             category,
-					Enabled:              true,
+					ID:                     feedID,
+					Name:                   name,
+					URL:                    url,
+					Category:               category,
+					Enabled:                true,
 					RefreshIntervalMinutes: &refreshInterval,
 				})
 				config.SaveConfig(s.configPath, s.config)
@@ -288,4 +345,3 @@ func HandleStatic(w http.ResponseWriter, r *http.Request) {
 	// Strip the /static/ prefix and serve the file
 	http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))).ServeHTTP(w, r)
 }
-

@@ -54,16 +54,17 @@ feeds:
     category: "general"
     enabled: true
     refresh_interval_minutes: 10
+  - id: "the-big-picture"
+    name: "The Big Picture"
+    url: "https://ritholtz.com/feed/"
+    category: "general"
+    enabled: true
+    refresh_interval_minutes: 10
   
 blocklist:
-  - "donald trump"
-  - "trump"
-  - "elon musk"
-  - "musk"
-  - "vance"
-  - "white house"
-  - "pam bondi"
-  - "ICE"
+  - "he who shall not be named"
+  - "voldemort"
+  - "labubus"
 ui:
   items_per_page: 50
   default_view: "latest"

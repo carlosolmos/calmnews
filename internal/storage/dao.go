@@ -31,6 +31,7 @@ type Article struct {
 	SourceName  string
 	Categories   string
 	IsRead       bool
+	IsSaved      bool
 }
 
 // hashArticleID generates a unique ID for an article based on feed URL and entry GUID/link
@@ -129,22 +130,33 @@ func UpdateFeedLastFetched(db *sql.DB, feedID string, t time.Time) error {
 // UpsertArticle inserts or updates an article in the database
 func UpsertArticle(db *sql.DB, article *Article) error {
 	query := `
-	INSERT INTO articles (id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO articles (id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read, is_saved)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT(id) DO UPDATE SET
 		title = excluded.title,
 		url = excluded.url,
 		summary = excluded.summary,
 		content = excluded.content,
 		published_at = excluded.published_at,
-		fetched_at = excluded.fetched_at,
+		fetched_at = COALESCE(articles.fetched_at, excluded.fetched_at),
 		source_name = excluded.source_name,
-		categories = excluded.categories;`
+		categories = excluded.categories,
+		is_read = COALESCE(excluded.is_read, articles.is_read),
+		is_saved = COALESCE(excluded.is_saved, articles.is_saved);`
+
+	isRead := 0
+	if article.IsRead {
+		isRead = 1
+	}
+	isSaved := 0
+	if article.IsSaved {
+		isSaved = 1
+	}
 
 	_, err := db.Exec(query,
 		article.ID, article.FeedID, article.Title, article.URL, article.Summary,
 		article.Content, article.PublishedAt, article.FetchedAt, article.SourceName,
-		article.Categories, article.IsRead)
+		article.Categories, isRead, isSaved)
 	if err != nil {
 		return fmt.Errorf("failed to upsert article: %w", err)
 	}
@@ -152,7 +164,8 @@ func UpsertArticle(db *sql.DB, article *Article) error {
 }
 
 // ListArticlesByView returns articles based on view type and optional feed filter
-func ListArticlesByView(db *sql.DB, view string, feedID string, limit int) ([]*Article, error) {
+// readFilter can be "all", "unread", or "read"
+func ListArticlesByView(db *sql.DB, view string, feedID string, readFilter string, limit int) ([]*Article, error) {
 	var query string
 	var args []interface{}
 
@@ -160,16 +173,22 @@ func ListArticlesByView(db *sql.DB, view string, feedID string, limit int) ([]*A
 	var timeWindow time.Time
 
 	switch view {
+	case "saved":
+		// Saved articles view - no time window, just saved articles
+		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read, is_saved
+			FROM articles
+			WHERE is_saved = 1`
+		// No time window for saved articles
 	case "today":
 		// Start of today
 		timeWindow = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read
+		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read, is_saved
 			FROM articles
 			WHERE published_at >= ?`
 	case "week":
 		// Last 7 days
 		timeWindow = now.AddDate(0, 0, -7)
-		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read
+		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read, is_saved
 			FROM articles
 			WHERE published_at >= ?`
 	case "latest":
@@ -177,19 +196,29 @@ func ListArticlesByView(db *sql.DB, view string, feedID string, limit int) ([]*A
 	default:
 		// Last 3 days or just limit
 		timeWindow = now.AddDate(0, 0, -3)
-		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read
+		query = `SELECT id, feed_id, title, url, summary, content, published_at, fetched_at, source_name, categories, is_read, is_saved
 			FROM articles
 			WHERE published_at >= ?`
 	}
 
-	args = append(args, timeWindow)
+	if view != "saved" {
+		args = append(args, timeWindow)
+	}
 
 	if feedID != "" && feedID != "all" {
 		query += ` AND feed_id = ?`
 		args = append(args, feedID)
 	}
 
-	query += ` ORDER BY published_at DESC LIMIT ?;`
+	// Add read filter
+	if readFilter == "unread" {
+		query += ` AND is_read = 0`
+	} else if readFilter == "read" {
+		query += ` AND is_read = 1`
+	}
+
+	// Sort: unread first (by published_at DESC), then read (by published_at DESC)
+	query += ` ORDER BY is_read ASC, published_at DESC LIMIT ?;`
 	args = append(args, limit)
 
 	rows, err := db.Query(query, args...)
@@ -201,11 +230,14 @@ func ListArticlesByView(db *sql.DB, view string, feedID string, limit int) ([]*A
 	var articles []*Article
 	for rows.Next() {
 		var a Article
+		var isRead, isSaved int
 		err := rows.Scan(&a.ID, &a.FeedID, &a.Title, &a.URL, &a.Summary, &a.Content,
-			&a.PublishedAt, &a.FetchedAt, &a.SourceName, &a.Categories, &a.IsRead)
+			&a.PublishedAt, &a.FetchedAt, &a.SourceName, &a.Categories, &isRead, &isSaved)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan article: %w", err)
 		}
+		a.IsRead = isRead == 1
+		a.IsSaved = isSaved == 1
 		articles = append(articles, &a)
 	}
 
@@ -214,6 +246,55 @@ func ListArticlesByView(db *sql.DB, view string, feedID string, limit int) ([]*A
 	}
 
 	return articles, nil
+}
+
+// MarkArticleAsRead marks an article as read
+func MarkArticleAsRead(db *sql.DB, articleID string) error {
+	query := `UPDATE articles SET is_read = 1 WHERE id = ?;`
+	_, err := db.Exec(query, articleID)
+	if err != nil {
+		return fmt.Errorf("failed to mark article as read: %w", err)
+	}
+	return nil
+}
+
+// MarkArticleAsUnread marks an article as unread
+func MarkArticleAsUnread(db *sql.DB, articleID string) error {
+	query := `UPDATE articles SET is_read = 0 WHERE id = ?;`
+	_, err := db.Exec(query, articleID)
+	if err != nil {
+		return fmt.Errorf("failed to mark article as unread: %w", err)
+	}
+	return nil
+}
+
+// ToggleArticleSaved toggles the saved status of an article
+func ToggleArticleSaved(db *sql.DB, articleID string) error {
+	query := `UPDATE articles SET is_saved = NOT is_saved WHERE id = ?;`
+	_, err := db.Exec(query, articleID)
+	if err != nil {
+		return fmt.Errorf("failed to toggle article saved status: %w", err)
+	}
+	return nil
+}
+
+// DeleteExpiredArticles deletes articles older than expirationHours from fetched_at, except saved ones
+func DeleteExpiredArticles(db *sql.DB, expirationHours int) (int64, error) {
+	query := `DELETE FROM articles 
+		WHERE is_saved = 0 
+		AND datetime(fetched_at, '+' || ? || ' hours') < datetime('now');`
+	
+	result, err := db.Exec(query, expirationHours)
+	if err != nil {
+		return 0, fmt.Errorf("failed to delete expired articles: %w", err)
+	}
+	
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	
+	return deleted, nil
 }
 
 // GenerateArticleID generates an article ID from feed URL and entry GUID/link

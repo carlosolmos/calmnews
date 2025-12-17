@@ -10,8 +10,8 @@
 *.out
 
 # Output of the go build command (by default)
-calmnews
-
+./calmnews
+bin/
 # Vendor directory (optional, if you're not committing vendor/)
 vendor/
 
@@ -46,3 +46,4 @@ data/
 
 # User/config file in home dir (for CalmNews)
 .calmnews/
+myconfig.yaml

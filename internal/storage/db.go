@@ -57,11 +57,18 @@ func RunMigrations(db *sql.DB) error {
 		source_name TEXT NOT NULL,
 		categories TEXT,
 		is_read INTEGER DEFAULT 0,
+		is_saved INTEGER DEFAULT 0,
 		FOREIGN KEY (feed_id) REFERENCES feeds(id)
 	);`
 
 	if _, err := db.Exec(articlesTable); err != nil {
 		return fmt.Errorf("failed to create articles table: %w", err)
+	}
+
+	// Add is_saved column if it doesn't exist (for existing databases)
+	_, err := db.Exec(`ALTER TABLE articles ADD COLUMN is_saved INTEGER DEFAULT 0;`)
+	if err != nil {
+		// Column might already exist, ignore error
 	}
 
 	// Create index on published_at for faster queries

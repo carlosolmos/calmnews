@@ -86,6 +86,8 @@ func main() {
 	mux.HandleFunc("/settings", server.HandleSettings)
 	mux.HandleFunc("/settings/blocklist", server.HandleUpdateBlocklist)
 	mux.HandleFunc("/settings/feeds", server.HandleUpdateFeeds)
+	mux.HandleFunc("/article/read", server.HandleMarkArticleRead)
+	mux.HandleFunc("/article/save", server.HandleToggleArticleSaved)
 	mux.HandleFunc("/static/", web.HandleStatic)
 
 	// Create HTTP server

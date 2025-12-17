@@ -11,19 +11,25 @@
         <header>
             <h1><a href="/">CalmNews</a></h1>
             <nav>
-                <a href="/?view=latest" {{ if eq .View "latest" }}class="active"{{ end }}>Latest</a>
-                <a href="/?view=today" {{ if eq .View "today" }}class="active"{{ end }}>Today</a>
-                <a href="/?view=week" {{ if eq .View "week" }}class="active"{{ end }}>This Week</a>
+                <a href="/?view=latest&feed={{ .FeedID }}&read={{ .ReadFilter }}" {{ if eq .View "latest" }}class="active"{{ end }}>Latest</a>
+                <a href="/?view=today&feed={{ .FeedID }}&read={{ .ReadFilter }}" {{ if eq .View "today" }}class="active"{{ end }}>Today</a>
+                <a href="/?view=week&feed={{ .FeedID }}&read={{ .ReadFilter }}" {{ if eq .View "week" }}class="active"{{ end }}>This Week</a>
+                <a href="/?view=saved&feed={{ .FeedID }}&read={{ .ReadFilter }}" {{ if eq .View "saved" }}class="active"{{ end }}>Saved</a>
                 <a href="/settings">Settings</a>
             </nav>
         </header>
 
         <div class="filters">
-            <select onchange="window.location.href='/?view={{ .View }}&feed=' + this.value">
+            <select name="feed" onchange="updateFilters()" id="feed-filter">
                 <option value="all" {{ if eq .FeedID "all" }}selected{{ end }}>All Feeds</option>
                 {{ range .Feeds }}
                 <option value="{{ .ID }}" {{ if eq $.FeedID .ID }}selected{{ end }}>{{ .Name }}</option>
                 {{ end }}
+            </select>
+            <select name="read" onchange="updateFilters()" id="read-filter">
+                <option value="all" {{ if eq .ReadFilter "all" }}selected{{ end }}>All Articles</option>
+                <option value="unread" {{ if eq .ReadFilter "unread" }}selected{{ end }}>Unread Only</option>
+                <option value="read" {{ if eq .ReadFilter "read" }}selected{{ end }}>Read Only</option>
             </select>
         </div>
 
@@ -36,9 +42,16 @@
         <main>
             <ol class="article-list">
                 {{ range .Articles }}
-                <li>
+                <li class="{{ if .IsRead }}read{{ else }}unread{{ end }} {{ if .IsSaved }}saved{{ end }}">
                     <div class="article">
-                        <a href="{{ .URL }}" target="_blank" class="title">{{ .Title }}</a>
+                        <div class="article-header">
+                            <a href="{{ .URL }}" target="_blank" class="title" data-article-id="{{ .ID }}" onclick="markAsRead('{{ .ID }}', this)">
+                                {{ if .IsRead }}<span class="read-indicator">✓</span> {{ end }}{{ if .IsSaved }}<span class="saved-indicator">★</span> {{ end }}{{ .Title }}
+                            </a>
+                            <button class="save-btn {{ if .IsSaved }}saved{{ end }}" onclick="toggleSave('{{ .ID }}', this)" title="{{ if .IsSaved }}Unsave{{ else }}Save{{ end }} article">
+                                {{ if .IsSaved }}★{{ else }}☆{{ end }}
+                            </button>
+                        </div>
                         <div class="meta">
                             <span class="source">{{ .SourceName }}</span>
                             <span class="time">{{ timeAgo .PublishedAt }}</span>
@@ -56,16 +69,104 @@
 
         <div class="pagination">
             {{ if .HasPrevPage }}
-            <a href="/?view={{ .View }}&feed={{ .FeedID }}&page={{ .PrevPage }}">← Previous</a>
+            <a href="/?view={{ .View }}&feed={{ .FeedID }}&read={{ .ReadFilter }}&page={{ .PrevPage }}">← Previous</a>
             {{ end }}
             {{ if and .HasPrevPage .HasNextPage }}
             <span> | </span>
             {{ end }}
             {{ if .HasNextPage }}
-            <a href="/?view={{ .View }}&feed={{ .FeedID }}&page={{ .NextPage }}">Next →</a>
+            <a href="/?view={{ .View }}&feed={{ .FeedID }}&read={{ .ReadFilter }}&page={{ .NextPage }}">Next →</a>
             {{ end }}
         </div>
+        
     </div>
+    <div class="footer">Made with ❤️ in Cupertino, CA. v 0.1.0</div>
+    <script>
+        function updateFilters() {
+            const feedFilter = document.getElementById('feed-filter').value;
+            const readFilter = document.getElementById('read-filter').value;
+            const view = '{{ .View }}';
+            window.location.href = '/?view=' + view + '&feed=' + feedFilter + '&read=' + readFilter;
+        }
+
+        function markAsRead(articleId, linkElement) {
+            // Mark as read via AJAX
+            const formData = new FormData();
+            formData.append('id', articleId);
+            
+            fetch('/article/read', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    // Update the UI immediately
+                    const listItem = linkElement.closest('li');
+                    if (listItem) {
+                        listItem.classList.remove('unread');
+                        listItem.classList.add('read');
+                        // Add checkmark if not already present
+                        if (!linkElement.querySelector('.read-indicator')) {
+                            const indicator = document.createElement('span');
+                            indicator.className = 'read-indicator';
+                            indicator.textContent = '✓ ';
+                            linkElement.insertBefore(indicator, linkElement.firstChild);
+                        }
+                    }
+                }
+            }).catch(err => {
+                console.error('Error marking article as read:', err);
+            });
+        }
+
+        function toggleSave(articleId, buttonElement) {
+            // Prevent event bubbling
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Toggle save status via AJAX
+            const formData = new FormData();
+            formData.append('id', articleId);
+            
+            fetch('/article/save', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    // Update the UI immediately
+                    const listItem = buttonElement.closest('li');
+                    const titleLink = listItem.querySelector('.title');
+                    
+                    if (buttonElement.classList.contains('saved')) {
+                        // Unsave
+                        buttonElement.classList.remove('saved');
+                        buttonElement.textContent = '☆';
+                        buttonElement.title = 'Save article';
+                        // Remove saved indicator from title
+                        const savedIndicator = titleLink.querySelector('.saved-indicator');
+                        if (savedIndicator) {
+                            savedIndicator.remove();
+                        }
+                        listItem.classList.remove('saved');
+                    } else {
+                        // Save
+                        buttonElement.classList.add('saved');
+                        buttonElement.textContent = '★';
+                        buttonElement.title = 'Unsave article';
+                        // Add saved indicator to title if not present
+                        if (!titleLink.querySelector('.saved-indicator')) {
+                            const indicator = document.createElement('span');
+                            indicator.className = 'saved-indicator';
+                            indicator.textContent = '★ ';
+                            titleLink.insertBefore(indicator, titleLink.firstChild);
+                        }
+                        listItem.classList.add('saved');
+                    }
+                }
+            }).catch(err => {
+                console.error('Error toggling article save status:', err);
+            });
+        }
+    </script>
 </body>
 </html>
 

@@ -66,6 +66,7 @@ func ParseFeed(data []byte, feedURL string, feedID string, sourceName string) ([
 			SourceName:  sourceName,
 			Categories:  "",
 			IsRead:      false,
+			IsSaved:     false,
 		}
 
 		articles = append(articles, article)

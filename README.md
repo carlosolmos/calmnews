@@ -7,6 +7,8 @@ A self-contained Go application that fetches articles from RSS/Atom feeds, store
 - Fetches articles from multiple RSS/Atom feeds
 - Stores articles locally in SQLite database
 - Filters articles based on a configurable blocklist
+- Articles expire and are removed after 72 hours, except save ones
+- Saved articles remain in the database until manually discarded
 - Clean, HN-inspired web interface
 - Settings page to manage feeds and blocklist
 - Background scheduler for automatic feed updates
@@ -17,10 +19,10 @@ A self-contained Go application that fetches articles from RSS/Atom feeds, store
 To build the CalmNews binary:
 
 ```bash
-go build ./cmd/calmnews
+go build -o bin/calmnews ./cmd/calmnews
 ```
 
-This will create a `calmnews` binary in the current directory.
+This will create a `calmnews` binary in the bin directory.
 
 ## Running
 
@@ -63,8 +65,8 @@ feeds:
     refresh_interval_minutes: 10
 
 blocklist:
-  - "donald trump"
-  - "trump"
+  - "he who shall not be named"
+  - "voldemort"
 
 ui:
   items_per_page: 50

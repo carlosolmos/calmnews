@@ -19,10 +19,27 @@ func StartScheduler(db *sql.DB, cfg *config.Config, refreshIntervalMinutes int) 
 		// Do an initial fetch immediately
 		fetchAllFeeds(db, cfg)
 
+		// Do an initial cleanup
+		cleanupExpiredArticles(db)
+
 		for range ticker.C {
 			fetchAllFeeds(db, cfg)
+			// Cleanup expired articles after each fetch cycle
+			cleanupExpiredArticles(db)
 		}
 	}()
+}
+
+// cleanupExpiredArticles removes articles older than 72 hours (except saved ones)
+func cleanupExpiredArticles(db *sql.DB) {
+	deleted, err := storage.DeleteExpiredArticles(db, 72)
+	if err != nil {
+		log.Printf("Error cleaning up expired articles: %v", err)
+		return
+	}
+	if deleted > 0 {
+		log.Printf("Cleaned up %d expired articles", deleted)
+	}
 }
 
 func fetchAllFeeds(db *sql.DB, cfg *config.Config) {
@@ -92,4 +109,3 @@ func fetchAndStoreFeed(db *sql.DB, feed *storage.Feed) error {
 
 	return nil
 }
-
