@@ -90,15 +90,21 @@ func main() {
 	mux.HandleFunc("/article/save", server.HandleToggleArticleSaved)
 	mux.HandleFunc("/static/", web.HandleStatic)
 
+	// Get listen address from environment or use default
+	listenAddr := os.Getenv("CALMNEWS_LISTEN_ADDR")
+	if listenAddr == "" {
+		listenAddr = "0.0.0.0:8080"
+	}
+
 	// Create HTTP server
 	httpServer := &http.Server{
-		Addr:    "127.0.0.1:8080",
+		Addr:    listenAddr,
 		Handler: mux,
 	}
 
 	// Start server in a goroutine
 	go func() {
-		log.Printf("Starting CalmNews server on http://127.0.0.1:8080")
+		log.Printf("Starting CalmNews server on http://%s", listenAddr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}

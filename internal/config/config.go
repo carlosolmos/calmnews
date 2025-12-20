@@ -33,8 +33,15 @@ type Config struct {
 	UI        UIConfig     `yaml:"ui"`
 }
 
-// DataDir returns the path to the CalmNews data directory (~/.calmnews/)
+// DataDir returns the path to the CalmNews data directory
+// Checks CALMNEWS_DATA_DIR environment variable first, then defaults to ~/.calmnews/
 func DataDir() (string, error) {
+	// Check for environment variable (useful for Docker)
+	if dataDir := os.Getenv("CALMNEWS_DATA_DIR"); dataDir != "" {
+		return dataDir, nil
+	}
+	
+	// Default to home directory
 	usr, err := user.Current()
 	if err != nil {
 		return "", fmt.Errorf("failed to get current user: %w", err)

@@ -1,0 +1,14 @@
+bin/
+*.db
+*.sqlite
+*.sqlite3
+.calmnews/
+data/
+.git/
+.gitignore
+*.md
+calmnews-deployment/
+.DS_Store
+*.swp
+*.swo
+
