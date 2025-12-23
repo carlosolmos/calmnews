@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Build the binary
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o calmnews ./cmd/calmnews
+RUN GOOS=linux GOARCH=amd64 go build -o calmnews ./cmd/calmnews
 
 # Runtime stage
 FROM alpine:latest

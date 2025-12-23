@@ -93,8 +93,22 @@ func fetchAndStoreFeed(db *sql.DB, feed *storage.Feed) error {
 		return fmt.Errorf("failed to parse: %w", err)
 	}
 
-	// Store articles
+	// Filter out duplicate articles by title
+	var uniqueArticles []*storage.Article
 	for _, article := range articles {
+		exists, err := storage.ArticleExistsByTitle(db, article.Title)
+		if err != nil {
+			log.Printf("Error checking for duplicate article %s: %v", article.Title, err)
+			// Continue with other articles, but don't skip this one
+		} else if exists {
+			log.Printf("Skipping duplicate article: %s", article.Title)
+			continue
+		}
+		uniqueArticles = append(uniqueArticles, article)
+	}
+
+	// Store unique articles
+	for _, article := range uniqueArticles {
 		if err := storage.UpsertArticle(db, article); err != nil {
 			log.Printf("Error upserting article %s: %v", article.ID, err)
 			// Continue with other articles
