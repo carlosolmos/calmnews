@@ -302,3 +302,14 @@ func GenerateArticleID(feedURL, entryGUID string) string {
 	return hashArticleID(feedURL, entryGUID)
 }
 
+// ArticleExistsByTitle checks if an article with the given title already exists in the database
+func ArticleExistsByTitle(db *sql.DB, title string) (bool, error) {
+	query := `SELECT COUNT(*) FROM articles WHERE title = ?;`
+	var count int
+	err := db.QueryRow(query, title).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to check article by title: %w", err)
+	}
+	return count > 0, nil
+}
+

@@ -87,6 +87,14 @@ func RunMigrations(db *sql.DB) error {
 		return fmt.Errorf("failed to create feed_id index: %w", err)
 	}
 
+	// Create index on title for duplicate detection
+	titleIndexQuery := `
+	CREATE INDEX IF NOT EXISTS idx_articles_title ON articles(title);`
+
+	if _, err := db.Exec(titleIndexQuery); err != nil {
+		return fmt.Errorf("failed to create title index: %w", err)
+	}
+
 	return nil
 }
 
