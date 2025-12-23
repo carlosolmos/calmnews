@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  calmnews:
+    image: calmnews:latest
+    container_name: calmnews
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /opt/calmnews/data:/app/data
+    environment:
+      - CALMNEWS_DATA_DIR=/app/data
+      - CALMNEWS_LISTEN_ADDR=0.0.0.0:8080
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.calmnews.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik-network"
+
+      # Basic Auth Middleware for Settings
+      - "traefik.http.middlewares.calmnews-auth.basicauth.users=admin:$$apr1$$JFlgFMlC$$deCeFxW6VrvxRfd7Lwvat0"
+
+      # Main router (lower priority)
+      - "traefik.http.routers.calmnews.rule=Host(`calmnews.iotitlan.com`)"
+      - "traefik.http.routers.calmnews.entrypoints=websecure"
+      - "traefik.http.routers.calmnews.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.calmnews.service=calmnews"
+      - "traefik.http.routers.calmnews.priority=1"
+
+      # Settings router (higher priority, requires auth)
+      - "traefik.http.routers.calmnews-settings.rule=Host(`calmnews.iotitlan.com`) && PathPrefix(`/settings`)"
+      - "traefik.http.routers.calmnews-settings.entrypoints=websecure"
+      - "traefik.http.routers.calmnews-settings.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.calmnews-settings.middlewares=calmnews-auth"
+      - "traefik.http.routers.calmnews-settings.service=calmnews"
+      - "traefik.http.routers.calmnews-settings.priority=10"
+
+networks:
+  traefik-network:
+    external: true
+
