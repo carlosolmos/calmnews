@@ -175,6 +175,76 @@ calmnews/
 - `github.com/ncruces/go-sqlite3` - SQLite driver (pure Go, no CGO)
 - `gopkg.in/yaml.v3` - YAML configuration
 
+
+### Install Docker on Ubuntu Linux 24
+#### Install Docker and Docker Compose on Ubuntu 24.04
+
+To install Docker and Docker Compose on Ubuntu 24.04, follow these steps:
+
+#### 1. Uninstall Old Versions (Optional)
+```bash
+sudo apt-get remove docker docker-engine docker.io containerd runc
+```
+
+#### 2. Update the apt Package Index
+```bash
+sudo apt-get update
+```
+
+#### 3. Install Required Packages
+```bash
+sudo apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+```
+
+#### 4. Add Docker’s Official GPG Key
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+```
+
+#### 5. Set up the Docker Repository
+```bash
+echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  "$(lsb_release -cs)" stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+#### 6. Update apt and Install Docker Engine
+```bash
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+#### 7. Test Your Docker Installation
+```bash
+sudo docker run hello-world
+```
+
+#### 8. (Optional) Manage Docker as a Non-root User
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### 9. Verify Docker Compose Plugin
+```bash
+docker compose version
+```
+
+You can now use both `docker` and `docker compose` directly from the command line.
+
+**Reference:**  
+- [Docker Engine Install on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+- [Post-installation steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/)
+
+
+
+
 ## License
 
 This is a personal project. Use as you wish.

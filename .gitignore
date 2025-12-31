@@ -47,3 +47,6 @@ data/
 # User/config file in home dir (for CalmNews)
 .calmnews/
 myconfig.yaml
+docker-compose-traefik.yml
+
+dynamic_conf.yml
