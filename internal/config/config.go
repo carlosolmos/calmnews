@@ -28,9 +28,10 @@ type UIConfig struct {
 
 // Config represents the complete application configuration
 type Config struct {
-	Feeds     []FeedConfig `yaml:"feeds"`
-	Blocklist []string     `yaml:"blocklist"`
-	UI        UIConfig     `yaml:"ui"`
+	Feeds       []FeedConfig `yaml:"feeds"`
+	Blocklist   []string     `yaml:"blocklist"`
+	URLBlocklist []string    `yaml:"url_blocklist,omitempty"`
+	UI          UIConfig     `yaml:"ui"`
 }
 
 // DataDir returns the path to the CalmNews data directory

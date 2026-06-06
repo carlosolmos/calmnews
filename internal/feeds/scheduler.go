@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"calmnews/internal/config"
@@ -71,7 +72,7 @@ func fetchAllFeeds(db *sql.DB, cfg *config.Config) {
 		}
 
 		// Fetch the feed
-		if err := fetchAndStoreFeed(db, feed); err != nil {
+		if err := fetchAndStoreFeed(db, cfg, feed); err != nil {
 			log.Printf("Error fetching feed %s (%s): %v", feed.Name, feed.URL, err)
 			continue
 		}
@@ -80,7 +81,7 @@ func fetchAllFeeds(db *sql.DB, cfg *config.Config) {
 	}
 }
 
-func fetchAndStoreFeed(db *sql.DB, feed *storage.Feed) error {
+func fetchAndStoreFeed(db *sql.DB, cfg *config.Config, feed *storage.Feed) error {
 	// Fetch feed data
 	data, err := FetchFeed(feed.URL)
 	if err != nil {
@@ -103,6 +104,14 @@ func fetchAndStoreFeed(db *sql.DB, feed *storage.Feed) error {
 		} else if exists {
 			log.Printf("Skipping duplicate article: %s", article.Title)
 			continue
+		}
+		// Auto-trash articles whose URL matches the URL blocklist
+		lowerURL := strings.ToLower(article.URL)
+		for _, blocked := range cfg.URLBlocklist {
+			if strings.Contains(lowerURL, strings.ToLower(blocked)) {
+				article.IsTrashed = true
+				break
+			}
 		}
 		uniqueArticles = append(uniqueArticles, article)
 	}

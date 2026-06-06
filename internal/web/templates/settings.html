@@ -44,6 +44,26 @@
             </section>
 
             <section class="settings-section">
+                <h2>URL Blocklist</h2>
+                <p>Articles with these URLs are permanently trashed and won't appear in the feed. Entries are added automatically when you trash an article.</p>
+
+                <ul class="blocklist">
+                    {{ range .URLBlocklist }}
+                    <li>
+                        <span>{{ . }}</span>
+                        <form method="POST" action="/settings/url_blocklist" style="display: inline;">
+                            <input type="hidden" name="action" value="remove">
+                            <input type="hidden" name="url" value="{{ . }}">
+                            <button type="submit">Remove</button>
+                        </form>
+                    </li>
+                    {{ else }}
+                    <li class="empty">No URL blocklist entries.</li>
+                    {{ end }}
+                </ul>
+            </section>
+
+            <section class="settings-section">
                 <h2>Feeds</h2>
                 <p>Manage your RSS/Atom feeds.</p>
 

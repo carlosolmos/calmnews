@@ -51,6 +51,7 @@
                             <button class="save-btn {{ if .IsSaved }}saved{{ end }}" onclick="toggleSave('{{ .ID }}', this)" title="{{ if .IsSaved }}Unsave{{ else }}Save{{ end }} article">
                                 {{ if .IsSaved }}★{{ else }}☆{{ end }}
                             </button>
+                            <button class="trash-btn" onclick="trashArticle('{{ .ID }}', this)" title="Trash article">🗑</button>
                         </div>
                         <div class="meta">
                             <span class="source">{{ .SourceName }}</span>
@@ -115,6 +116,28 @@
                 }
             }).catch(err => {
                 console.error('Error marking article as read:', err);
+            });
+        }
+
+        function trashArticle(articleId, buttonElement) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const formData = new FormData();
+            formData.append('id', articleId);
+
+            fetch('/article/trash', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    const listItem = buttonElement.closest('li');
+                    if (listItem) {
+                        listItem.remove();
+                    }
+                }
+            }).catch(err => {
+                console.error('Error trashing article:', err);
             });
         }
 

@@ -88,6 +88,8 @@ func main() {
 	mux.HandleFunc("/settings/feeds", server.HandleUpdateFeeds)
 	mux.HandleFunc("/article/read", server.HandleMarkArticleRead)
 	mux.HandleFunc("/article/save", server.HandleToggleArticleSaved)
+	mux.HandleFunc("/article/trash", server.HandleTrashArticle)
+	mux.HandleFunc("/settings/url_blocklist", server.HandleUpdateURLBlocklist)
 	mux.HandleFunc("/static/", web.HandleStatic)
 
 	// Get listen address from environment or use default

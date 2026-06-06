@@ -125,8 +125,9 @@ func (s *Server) HandleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Blocklist": s.config.Blocklist,
-		"Feeds":     feeds,
+		"Blocklist":    s.config.Blocklist,
+		"URLBlocklist": s.config.URLBlocklist,
+		"Feeds":        feeds,
 	}
 
 	if err := s.RenderTemplate(w, "settings.html", data); err != nil {
@@ -225,6 +226,75 @@ func (s *Server) HandleToggleArticleSaved(w http.ResponseWriter, r *http.Request
 	// Return JSON response for AJAX calls
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"status": "ok"}`))
+}
+
+// HandleTrashArticle marks an article as trashed and adds its URL to the URL blocklist
+func (s *Server) HandleTrashArticle(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	articleID := r.FormValue("id")
+	if articleID == "" {
+		http.Error(w, "Article ID required", http.StatusBadRequest)
+		return
+	}
+
+	articleURL, err := storage.TrashArticle(s.db, articleID)
+	if err != nil {
+		log.Printf("Error trashing article: %v", err)
+		http.Error(w, "Error trashing article", http.StatusInternalServerError)
+		return
+	}
+
+	// Add the URL to the URL blocklist if not already present
+	lowerURL := strings.ToLower(articleURL)
+	exists := false
+	for _, u := range s.config.URLBlocklist {
+		if strings.ToLower(u) == lowerURL {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		s.config.URLBlocklist = append(s.config.URLBlocklist, articleURL)
+		if err := config.SaveConfig(s.configPath, s.config); err != nil {
+			log.Printf("Error saving config after trash: %v", err)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status": "ok"}`))
+}
+
+// HandleUpdateURLBlocklist handles POST requests to manage the URL blocklist
+func (s *Server) HandleUpdateURLBlocklist(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	action := r.FormValue("action")
+	url := strings.TrimSpace(r.FormValue("url"))
+
+	if action == "remove" && url != "" {
+		lowerURL := strings.ToLower(url)
+		var newList []string
+		for _, u := range s.config.URLBlocklist {
+			if strings.ToLower(u) != lowerURL {
+				newList = append(newList, u)
+			}
+		}
+		s.config.URLBlocklist = newList
+		if err := config.SaveConfig(s.configPath, s.config); err != nil {
+			log.Printf("Error saving config: %v", err)
+			http.Error(w, "Error saving config", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
 // HandleUpdateFeeds handles POST requests to update feeds

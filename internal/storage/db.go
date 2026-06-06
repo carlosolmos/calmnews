@@ -71,6 +71,9 @@ func RunMigrations(db *sql.DB) error {
 		// Column might already exist, ignore error
 	}
 
+	// Add is_trashed column if it doesn't exist (for existing databases)
+	_, _ = db.Exec(`ALTER TABLE articles ADD COLUMN is_trashed INTEGER DEFAULT 0;`)
+
 	// Create index on published_at for faster queries
 	indexQuery := `
 	CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DESC);`
