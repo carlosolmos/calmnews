@@ -108,6 +108,7 @@ func (s *Server) HandleIndex(w http.ResponseWriter, r *http.Request) {
 		"HasPrevPage":       page > 1,
 		"FilteredCount":     filteredCount,
 		"ShowFilteredCount": s.config.UI.ShowFilteredCount,
+		"Theme":             s.config.UI.Theme,
 	}
 
 	if err := s.RenderTemplate(w, "index.html", data); err != nil {
@@ -128,6 +129,7 @@ func (s *Server) HandleSettings(w http.ResponseWriter, r *http.Request) {
 		"Blocklist":    s.config.Blocklist,
 		"URLBlocklist": s.config.URLBlocklist,
 		"Feeds":        feeds,
+		"Theme":        s.config.UI.Theme,
 	}
 
 	if err := s.RenderTemplate(w, "settings.html", data); err != nil {
@@ -266,6 +268,29 @@ func (s *Server) HandleTrashArticle(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"status": "ok"}`))
+}
+
+// HandleUpdateTheme handles POST requests to change the UI theme
+func (s *Server) HandleUpdateTheme(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	theme := r.FormValue("theme")
+	validThemes := map[string]bool{"": true, "terminal": true, "military": true, "industrial": true, "space": true}
+	if !validThemes[theme] {
+		theme = ""
+	}
+
+	s.config.UI.Theme = theme
+	if err := config.SaveConfig(s.configPath, s.config); err != nil {
+		log.Printf("Error saving config: %v", err)
+		http.Error(w, "Error saving config", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
 // HandleUpdateURLBlocklist handles POST requests to manage the URL blocklist

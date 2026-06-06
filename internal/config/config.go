@@ -24,6 +24,7 @@ type UIConfig struct {
 	ItemsPerPage      int    `yaml:"items_per_page"`
 	DefaultView       string `yaml:"default_view"`
 	ShowFilteredCount bool   `yaml:"show_filtered_count"`
+	Theme             string `yaml:"theme,omitempty"`
 }
 
 // Config represents the complete application configuration

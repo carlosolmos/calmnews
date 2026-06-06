@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" {{ if .Theme }}data-theme="{{ .Theme }}"{{ end }}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +17,39 @@
         </header>
 
         <main>
+            <section class="settings-section">
+                <h2>Theme</h2>
+                <p>Choose a visual theme for the interface.</p>
+                <form method="POST" action="/settings/theme" class="theme-picker">
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="" {{ if eq .Theme "" }}checked{{ end }}>
+                        <span class="theme-swatch" style="background: linear-gradient(135deg, #6b8db8, #f5f7fa);"></span>
+                        <span class="theme-label">Default</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="terminal" {{ if eq .Theme "terminal" }}checked{{ end }}>
+                        <span class="theme-swatch" style="background: linear-gradient(135deg, #00cc33, #0a0f0a);"></span>
+                        <span class="theme-label">Terminal</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="military" {{ if eq .Theme "military" }}checked{{ end }}>
+                        <span class="theme-swatch" style="background: linear-gradient(135deg, #1CE644, #3d4440);"></span>
+                        <span class="theme-label">Military</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="industrial" {{ if eq .Theme "industrial" }}checked{{ end }}>
+                        <span class="theme-swatch" style="background: linear-gradient(135deg, #CC9332, #2A2825);"></span>
+                        <span class="theme-label">Industrial</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="space" {{ if eq .Theme "space" }}checked{{ end }}>
+                        <span class="theme-swatch" style="background: linear-gradient(135deg, #738A9A, #2a3540);"></span>
+                        <span class="theme-label">Space</span>
+                    </label>
+                    <button type="submit" class="theme-apply-btn">Apply Theme</button>
+                </form>
+            </section>
+
             <section class="settings-section">
                 <h2>Blocklist</h2>
                 <p>Articles containing these phrases will be filtered out from the main feed.</p>
