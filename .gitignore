@@ -50,3 +50,5 @@ myconfig.yaml
 docker-compose-traefik.yml
 
 dynamic_conf.yml
+
+.claude/
