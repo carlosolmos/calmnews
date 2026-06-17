@@ -425,15 +425,13 @@ header nav a.active {
 /* ── Article card ────────────────────────────────────────────────── */
 
 .article-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
     margin-bottom: 8px;
 }
 
-.article-header .title {
-    flex: 1;
+.article-actions {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
 }
 
 .save-btn {
@@ -444,7 +442,6 @@ header nav a.active {
     padding: 4px 8px;
     opacity: 0.4;
     transition: all 0.2s ease;
-    flex-shrink: 0;
     border-radius: 6px;
     color: var(--star);
 }
@@ -468,7 +465,6 @@ header nav a.active {
     padding: 4px 8px;
     opacity: 0.25;
     transition: all 0.2s ease;
-    flex-shrink: 0;
     border-radius: 6px;
     color: var(--text-dim);
 }

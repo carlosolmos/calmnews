@@ -48,6 +48,8 @@
                             <a href="{{ .URL }}" target="_blank" class="title" data-article-id="{{ .ID }}" onclick="markAsRead('{{ .ID }}', this)">
                                 {{ if .IsRead }}<span class="read-indicator">✓</span> {{ end }}{{ if .IsSaved }}<span class="saved-indicator">★</span> {{ end }}{{ .Title }}
                             </a>
+                        </div>
+                        <div class="article-actions">
                             <button class="save-btn {{ if .IsSaved }}saved{{ end }}" onclick="toggleSave('{{ .ID }}', this)" title="{{ if .IsSaved }}Unsave{{ else }}Save{{ end }} article">
                                 {{ if .IsSaved }}★{{ else }}☆{{ end }}
                             </button>
